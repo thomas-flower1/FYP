@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 
 class Layer:
@@ -7,53 +8,50 @@ class Layer:
     Forward pass and backpropogation functions are handled here
     Activation functions and their respective backpropogation is handled elsewhere
     '''
-    def __init__(self, input_vector: np.array = None, next_layer_size: int = None):
-        self._input_vector: np.array = self.set_input_vector(input_vector, None)
-        self._weights: np.array = self._set_weights(next_layer_size) # this is a matrix
-        self._bias: np.array = self._set_bias(next_layer_size)
+    def __init__(self, input_vector: np.ndarray, next_layer_size: int): # need to validate the next layer size too
+        self._input_vector: np.ndarray = self._valdiate_input_vector(input_vector) # could be unsafe if this is not of shape(1, n)
+        self._weights: np.ndarray = np.random.uniform(-1, 1, (next_layer_size, input_vector.size)) # this is a matrix
+        self._bias: np.ndarray = np.random.uniform(-1, 1, (next_layer_size,))
 
 
-    def set_input_vector(self, input_vector: np.array, size: int | None) -> np.array:
+    def _valdiate_input_vector(self, input_vector: np.ndarray) -> np.ndarray:
+        '''Make sure that the shape of the input vectore is (1, n)'''
+        if type(input_vector) != np.ndarray:
+            raise Exception("Input vector must be a numpy ndarray")
 
-        # Called duing the construction of the class
-        if type(input_vector) == np.array:
+        try:
+            rows, _ = input_vector.shape
+        except ValueError:
             return input_vector
+        else:
+            raise Exception("Input vector should have shape of (1, n)")
 
-       # Called every other time - the neurons should never have random values 
-       # Neuron values always have the previous layer to read off of
-       # This code for creating a random neuron layer is redundant
-        if not size:
-            return Exception("Must provide a size for the input neuron vector")
-        
-        self._input_vector = np.random.rand(1, size)
 
-    def get_input_vector(self) -> np.array:
+
+    def set_input_vector(self, input_vector: np.ndarray) -> None:
+        # Used to reasign during back propogation
+        self._input_vector = input_vector
+          
+
+    def get_input_vector(self) -> np.ndarray:
         return self._input_vector
 
-    
-    def _set_weights(self, next_layer_size: int):
-       # the width is the number of the input neurons
-       # the height is the number of neurons in the second layer
+    def set_weights(self, weights: np.ndarray) -> None:
+        # TODO: validate shape
+        self._weights = weights
 
-       # when the class is first constructed, create a random matrix
-       # TODO: Allow for the assignment of the weights - will need this for the loading feature down the line
-       rows, cols = self._input_vector.shape
-       if rows > 1:
-           raise Exception("Neuron layer should be a vector not a matrix")
-       return np.random.rand(next_layer_size, cols)
-
-
-    def _get_weights(self) -> np.array:
+    def get_weights(self) -> np.ndarray:
         return self._weights
 
-    def _set_bias(self, next_layer_size: int) -> np.array:
-        # More simple since we just need on bias associated with each of the neurons on the next layer
-        return np.random.rand(1, next_layer_size)
+    def set_bias(self, bias: np.ndarray) -> None:
+        # TODO: validate shape
+        self._bias = bias
 
-    def _get_bias(self) -> np.array:
+    def get_bias(self) -> np.ndarray:
         return self._bias
 
-    def forward(self) -> np.array:
+
+    def forward(self) -> np.ndarray:
         ### forward pass and returns a np.array of shape (1, next_layer_size) a vector of neuron values
         ### Needs to have the bias vector, the weights matrix and the current layer neurons
         dp = np.dot(self._weights, self._input_vector)
@@ -65,11 +63,14 @@ class Layer:
         pass
 
 
-    def save():
+    def save(self):
         '''Saves the weights and bias for the current layer to csv file'''
+        pass
+        
 
     def load(self, filename: str) -> None:
         '''Given a filename we load the weights and biases'''
+        pass
 
 
 
@@ -82,30 +83,46 @@ def Softmax():
 
 ### UNIT TESTS ###
 def test_input_vector():
-    # arr = np.array([1,2, 3])
-    # test_layer: Layer = Layer(arr)
-   
 
-    test_layer2 = Layer()
-    test_layer2.set_input_vector(None, 10)
-    print(test_layer2.get_input_vector())
+    ### Testing the happy path
+    arr1 = np.array([1, 2, 3])
+    layer1 = Layer(arr1, 10)
+    assert np.array_equal(layer1.get_input_vector(), arr1)
 
+    ### Testing wrong type
+    arr2 = [1, 2, 3]
+    with pytest.raises(Exception) as e:
+        layer2 = Layer(arr2, 10)
+
+    ### Test wrong shape 
+    arr3 = np.array([
+        [1, 2, 3],
+        [4, 5, 6]
+    ])
+    with pytest.raises(Exception) as e:
+        layer3 = Layer(arr3, 10)
+
+
+
+
+def test_forward_pass():
+    pass
  
 
 
 
 
 ### CREATION OF THE NN
+layer = Layer(np.array([1, 2, 3]), 10)
+print(f"Random Weights: \n {layer.get_weights()}")
+print(f"Random Bias: \n {layer.get_bias()}")
+print(f"Forward Vector: {layer.forward()}")
+
+
+
 ### This Neural Network for this example will have 2 hidden layers of 128 neurons
 ### The activation function for the hidden layers will be ReLu
 ### The final layer will use Softmax as the activation function
 ### The cost fucntion is the Mean Squared Error
 
 
-tmp = [
-    [1, 2, 3],
-    [4, 5, 6]
-]
-arr = np.array(tmp)
-
-print(arr.shape)
