@@ -74,11 +74,18 @@ class Layer:
 
 
 
-def Relu():
-    pass
+def ReLu(vector: np.ndarray) -> np.ndarray:
+    '''f(x) = max(0, x)'''
 
-def Softmax():
-    pass
+    return np.maximum(vector, 0)
+
+def Softmax(vector: np.ndarray):
+    d = np.exp(vector)
+    n = np.sum(np.exp(vector))
+    sol = [d[i] / n for i in range(vector.shape[0])]
+    return np.round(np.array(sol), 3)
+
+    
 
 
 ### UNIT TESTS ###
@@ -109,14 +116,33 @@ def test_forward_pass():
     pass
  
 
+def test_ReLu():
+    arr = np.array([-1, 2, 3])
+    assert np.array_equal(ReLu(arr), np.array([0, 2, 3]))
 
+
+def test_softmax():
+    # happy path
+    arr = np.array([2, 1, 0.1])
+    assert np.array_equal(Softmax(arr), np.array([0.659, 0.242, 0.099]))
 
 
 ### CREATION OF THE NN
-layer = Layer(np.array([1, 2, 3]), 10)
+HIDDEN_LAYER_SIZE = 128
+
+layer = Layer(np.array([1, 2, 3]), HIDDEN_LAYER_SIZE)
+print(f"Input vector: \n {layer.get_input_vector()}")
 print(f"Random Weights: \n {layer.get_weights()}")
 print(f"Random Bias: \n {layer.get_bias()}")
-print(f"Forward Vector: {layer.forward()}")
+
+### FORWARD FROM THE PHOTO GREYSCALE LAYER TO THE FIRST HIDDEN LAYER
+f1 = layer.forward()
+print(f"Forward Vector: {f1}")
+
+### APPLYING THE ACTIVATION FUNCTION TO THE OUTPUT OF THE FIRST HIDDEN LAYER
+r1 = ReLu(f1)
+print(f"Applying ReLu to the output of the first layer: {r1}")
+
 
 
 
