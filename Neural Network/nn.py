@@ -59,8 +59,23 @@ class Layer:
 
         
 
-    def backwards(self):
-        pass
+    def backwards(self, prediction: np.ndarray, actual: np.ndarray, output: np.ndarray, input_vector: np.ndarray) -> np.ndarray:
+        # for this example we have it going from the cost function to the first hidden layer
+        '''
+        Args:
+
+        Prediction: The output of the newtork *after* the activation function has been applied
+        Actual: The 0 vector with the correct label
+        Output: The output of the NN, before applying the neural network - z = aw + b
+        
+        
+        '''
+
+        ### The derivative of the cost function
+        # dc_da = 2 * np.subtract(prediction, actual) # DONE
+        # da_dz = np.where(output > 0, 1, 0)
+        # dz_dw = input_vector
+        # dc_dw = dz_dw * da_dz * dc_da
 
 
     def save(self):
@@ -85,9 +100,30 @@ def Softmax(vector: np.ndarray):
     sol = [d[i] / n for i in range(vector.shape[0])]
     return np.round(np.array(sol), 3)
 
+### TODO: Change the cost function to Cross Entropy Loss
 def Cost(prediction: np.ndarray, actual: np.ndarray):
     '''Will later have this be the MSE, for now it calculates how well the network does on a single training example'''
     return np.square(np.subtract(prediction, actual))
+
+
+### BACKPROPOGATION - WILL LATER MOVE THESE FUNCTIONS TO THE LAYERS
+def softmax_backpropogation(prediction: np.ndarray, target: np.ndarray, input: np.ndarray) -> np.ndarray:
+    '''Usage: between the outpt layer and the last hidden layer'''
+
+    ### SINCE WE ARE USING THE CROSS ENTROPY LOSS FUNCTION THE DERIVATIVE COLLAPSES NICELY
+    d = np.subtract(prediction, target) ### da_dz * dc_da
+    dc_dw = np.outer(d, input)
+    return dc_dw
+
+def relu_backpropogation():
+    pass
+
+def backpropogation():
+    '''Function that updates and does all the backpropogation stuff'''
+    pass 
+
+
+
 
 
 ### UNIT TESTS ###
@@ -130,27 +166,28 @@ def test_softmax():
 
 
 ### CREATION OF THE NN
-HIDDEN_LAYER_SIZE = 128
+# HIDDEN_LAYER_SIZE = 128
 
-layer = Layer(np.array([1, 2, 3]), HIDDEN_LAYER_SIZE)
-print(f"Input vector: \n {layer.get_input_vector()}")
-print(f"Random Weights: \n {layer.get_weights()}")
-print(f"Random Bias: \n {layer.get_bias()}")
+# layer = Layer(np.array([1, 2, 3]), HIDDEN_LAYER_SIZE)
+# print(f"Input vector: \n {layer.get_input_vector()}")
+# print(f"Random Weights: \n {layer.get_weights()}")
+# print(f"Random Bias: \n {layer.get_bias()}")
 
-### FORWARD FROM THE PHOTO GREYSCALE LAYER TO THE FIRST HIDDEN LAYER
-f1 = layer.forward()
-print(f"Forward Vector: {f1}")
+# ### FORWARD FROM THE PHOTO GREYSCALE LAYER TO THE FIRST HIDDEN LAYER
+# f1 = layer.forward()
+# print(f"Forward Vector: {f1}")
 
-### APPLYING THE ACTIVATION FUNCTION TO THE OUTPUT OF THE FIRST HIDDEN LAYER
-r1 = ReLu(f1)
-print(f"Applying ReLu to the output of the first layer: {r1}")
-
-
+# ### APPLYING THE ACTIVATION FUNCTION TO THE OUTPUT OF THE FIRST HIDDEN LAYER
+# r1 = ReLu(f1)
+# print(f"Applying ReLu to the output of the first layer: {r1}")
 
 
 ### This Neural Network for this example will have 2 hidden layers of 128 neurons
 ### The activation function for the hidden layers will be ReLu
 ### The final layer will use Softmax as the activation function
 ### The cost fucntion is the Mean Squared Error
+
+arr = np.array([1, -1, 10])
+print(np.where(arr > 0, 1, 0))
 
 
