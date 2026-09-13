@@ -85,7 +85,9 @@ def Softmax(vector: np.ndarray):
     sol = [d[i] / n for i in range(vector.shape[0])]
     return np.round(np.array(sol), 3)
 
-    
+def Cost(prediction: np.ndarray, actual: np.ndarray):
+    '''Will later have this be the MSE, for now it calculates how well the network does on a single training example'''
+    return np.square(np.subtract(prediction, actual))
 
 
 ### UNIT TESTS ###
