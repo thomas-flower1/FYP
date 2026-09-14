@@ -107,16 +107,30 @@ def Cost(prediction: np.ndarray, actual: np.ndarray):
 
 
 ### BACKPROPOGATION - WILL LATER MOVE THESE FUNCTIONS TO THE LAYERS
-def softmax_backpropogation(prediction: np.ndarray, target: np.ndarray, input: np.ndarray) -> np.ndarray:
+def softmax_backpropogation(prediction: np.ndarray, target: np.ndarray, a: np.ndarray) -> np.ndarray:
     '''Usage: between the outpt layer and the last hidden layer'''
+
 
     ### SINCE WE ARE USING THE CROSS ENTROPY LOSS FUNCTION THE DERIVATIVE COLLAPSES NICELY
     d = np.subtract(prediction, target) ### da_dz * dc_da
-    dc_dw = np.outer(d, input)
-    return dc_dw
+    dc_dw = np.outer(d, a)
 
-def relu_backpropogation():
-    pass
+    # ALMOST FORGOT ABOUT THE BIAS - dz / db = 1
+
+    return (dc_dw, d) # (weight gradients (matrix), bias gradients (vector))
+
+def relu_backpropogation(z: np.ndarray, a: np.ndarray, prev: np.ndarray):
+    '''Two cases, either this is the layer next to the '''
+
+    da_dz = np.where(z > 0, 1, 0) # shape (1,), derivative of ReLu
+    delta = 
+
+
+    ### THE ISSUE WE HAVE IS THE DERIVATIVE OF THE DX DW STEP
+   
+
+    return (dc_dw, dc_db) # (weight gradients (matrix), bias gradients (vector))
+
 
 def backpropogation():
     '''Function that updates and does all the backpropogation stuff'''
