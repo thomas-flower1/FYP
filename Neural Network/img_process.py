@@ -7,34 +7,8 @@ Creates a new class that containts the data and the correct labbel for training
 import numpy as np
 from PIL import Image
 
-WIDTH = 64
-HEIGHT = 64
-
-def validate(rel_path: str):
-    img = Image.open(rel_path).convert("L") # convert the image to grayscale   
-    data = np.array(img.getdata())
-
-   
-    width, height = img.size
-
-    matrix = []
-
-    index = 0
-    for _ in range(height):
-        row = []
-        for _ in range(width):
-            row.append(data[index])
-            index += 1
-        matrix.append(row)
-
-    for row in matrix:
-        for col in row:
-            if col > 128:
-                print(' ', end='')
-            else:
-                print('1', end='')
-
-        print('\n')
+WIDTH = 128
+HEIGHT = 128
 
 def process(filename: str) -> None:
     '''
@@ -52,8 +26,8 @@ def process(filename: str) -> None:
 
     with open(filename, "w") as wf: # Outside of the loop so we don't constantly open the file
         for i in range(START_INDEX, END_INDEX):
-            # fn = f"data_set/cats_set/cat.{i}.jpg"
-            fn = f"data_set/dogs_set/dog.{i}.jpg"
+            fn = f"data_set/cats_set/cat.{i}.jpg"
+            # fn = f"data_set/dogs_set/dog.{i}.jpg"
             img = Image.open(fn).convert("L")
 
             # Resizing the image 
@@ -64,8 +38,43 @@ def process(filename: str) -> None:
             wf.write("\n")
             
 
+class Data:
+    def __init__(self, data, target):
+        self._data: list = data
+        self._target: list = target
+
+
+    def get_data(self):
+        return self._data
+
+    def get_target(self):
+        return self._target
+
+
+def read(filename: str, hot_encoded: list) -> list:
+    '''Takes in the csv filename and returns a list of Data objects'''
+
+    ### hot encoded is either [0, 1] or [1, 0 ] for our uses case
+    sol = []
+    with open(filename, "r") as rf:
+        for line in rf:
+            arr =  arr = [int(x) / 255 for x in line.rstrip().split(",")]
+            data = Data(arr, hot_encoded)
+            sol.append(data)
+
+    return sol
+
+
+
+### TESTING
+# data = read("cat_dog_training_data/cat.csv", [0, 1])
+
+
+
 ### WRITING THE DATA
 # process("dog.csv")
+process("cat.csv")
+
 
 
 
