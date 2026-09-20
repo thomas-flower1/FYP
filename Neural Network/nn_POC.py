@@ -6,6 +6,14 @@ import scipy as sp
 This file was to test and verify the maths for the acual NN implementation. In partciular
 some of the calaculus for the backpropogation algorithm proved to be tricky. This file is a small
 implementation of a NN which was used as a template for the final NN implementation.
+
+
+
+TO TEST
+- Time a single training example
+- Look into the loops, can we optimize
+- Test if the activation functions blow up
+- Type cast to float32
 '''
 
 
@@ -44,6 +52,8 @@ def softmax_back(y_hat, y, a_prev, w):
     dc_dw = np.outer(delta, a_prev) # gradients for w, with respect to the cost function
 
     transpose_w = w.transpose() # we want all the weights a neuron influences - each row is now that
+
+    ### TODO OPTIMIZE THIS
     dc_da = [] # a(L-1)
     for row in transpose_w:
         dc_da.append(np.dot(row, delta)) # a[k][L-1]
@@ -69,67 +79,83 @@ def relu_back(dc_da_prev, z, w, a_prev):
     dc_dw = np.outer(delta, a_prev)
 
     transpose_w = w.transpose() # we want all the weights a neuron influences - each row is now that
+
+    ### TODO OPTIMIZE THIS
     dc_da = [] # a(L-1)
     for row in transpose_w:
-        dc_da.append(np.dot(row, delta)) # a[k][L-1]
+        dc_da.append(np.dot(row, delta)) # a[k][L-1] 
     dc_da = np.array(dc_da)
 
     return (dc_dw, dc_da, delta)
 
-def update_layer(gradients, w, b, learning_rate) -> np.ndarray:
+def update_layer(gradients, vector, learning_rate) -> np.ndarray:
     '''
-    
-    
-    
+    Given a vector adds or subtracts a small amount
     '''
-    pass
+
+    vector -= gradients * learning_rate
+    return vector
 
 
 ### SAMPLE NEURAL NETWORK ###
 ### INPUT LAYER SIZE 2, HIDDEN LAYER SIZE 1, OUTPUT LAYER SIZE 2 ###
 
 ## INPUT LAYER
-input = np.array([3, 5])
+input = np.array([0.3, 0.5], dtype=np.float32)
 
 ## HIDDEN LAYER
-w1 = np.array([[2, 9]])
-b1 = np.array([5])
+w1 = np.array([[0.2, -0.9]], dtype=np.float32)
+b1 = np.array([0.78], dtype=np.float32)
 
 ## OUTPUT LAYER
-w2 = np.array([[8], [9]])
-b2 = np.array([6])
+w2 = np.array([[-0.3], [0.9]], dtype=np.float32)
+b2 = np.array([0.6, 0.4], dtype=np.float32)
 
-y_true = np.array([1, 0])
+y_true = np.array([1, 0], dtype=np.float32)
+LEARNING_RATE = 0.01
 
 z1 = forward(input, w1, b1)
-assert z1 == np.array([56]) # may want to do a type conversion of this later
-
 a1 = relu(z1)
-assert z1 == np.array([56])
-
 z2 = forward(a1, w2, b2)
-assert np.array_equal(np.array([454, 510]), z2)
-
 a2 = softmax(z2)
+c = loss(y_true, a2)
+print(f"Current loss is: {c}")
+print(f"Hidden Layer Weights: {w1}")
+print(f"Hidden Layer Weights: {b1}")
+print(f"Output Layer Weights: {w2}")
+print(f"Output Layer Weights: {b2}")
 
 
+# Backpropogation step
+dc_dw, dc_da, dc_db = softmax_back(a2, y_true, a1, w2)
+
+## Updating the weights and bias for the output layer ##
+w2 = update_layer(dc_dw, w2, LEARNING_RATE)
+b2 = update_layer(dc_db, b2, LEARNING_RATE)
+
+print(f"Updated Output layer weights: {w2}")
+print(f"Updated Output layer bias: {b2}")
+
+dc_dw, dc_da, dc_db = relu_back(dc_da, z1, w1, input)
+w1 = update_layer(dc_dw, w1, LEARNING_RATE)
+b1 = update_layer(dc_db, b1, LEARNING_RATE)
+
+print(f"Updated Output layer weights: {w1}")
+print(f"Updated Output layer bias: {b1}")
+
+z1 = forward(input, w1, b1)
+a1 = relu(z1)
+z2 = forward(a1, w2, b2)
+a2 = softmax(z2)
+c = loss(y_true, a2)
+print(f"Current loss is: {c}")
 
 
-
-
-
-# z2 = forward(a1, w2, b2)
-# a2 = softmax(z2)
-# c = loss(y_true, a2)
 
 # ### RUNNING BACKPROPOGATION
 # ### OUTPUT LAYER TO HIDDEN LAYER
 # dc_dw1, dc_da1, delta1 = softmax_back(a2, y_true, a1, w2)
 # dc_dw2, dc_da2, delta2 = relu_back(dc_da1, z1, w1, input)
-
-
-
-
 
 
 
