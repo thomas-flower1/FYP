@@ -11,8 +11,8 @@ class Layer:
     '''
     XXX
     Class that keeps track of the Input Neurons and the weights and bias' associated with it
-    Forward pass and backpropogation functions are handled here
-    Activation functions and their respective backpropogation is handled elsewhere
+    Forward pass and backpropagation functions are handled here
+    Activation functions and their respective backpropagation is handled elsewhere
     XXX
     '''
     def __init__(self, input_vector: np.ndarray, current_layer_size: int): # need to validate the next layer size too
@@ -73,8 +73,8 @@ def cross_entropy_loss(prediction: np.ndarray, target: np.ndarray) -> int:
     return sum(-(target * np.log(prediction) + (1 - target) * np.log(1 - prediction))) / prediction.shape
    
 
-### BACKPROPOGATION ###
-def softmax_backpropogation(prediction: np.ndarray, target: np.ndarray, output_prev: np.ndarray, w: np.ndarray) -> tuple:
+### BACKPROPAGATION ###
+def softmax_backpropagation(prediction: np.ndarray, target: np.ndarray, output_prev: np.ndarray, w: np.ndarray) -> tuple:
     """Function that computes the gradients of the output layer, with respect to softmax and cross-entropy loss
 
     Args:
@@ -103,18 +103,28 @@ def softmax_backpropogation(prediction: np.ndarray, target: np.ndarray, output_p
     dc_da = np.array(dc_da)
     return (dc_dw, dc_da, delta)
 
-  
 
 
-#FIXME
-def relu_backpropogation(dc_da: np.ndarray, z: np.ndarray, w: np.ndarray, output_prev: np.ndarray) -> tuple:
-    pass
+#TODO: DOCSTRING
+def relu_backpropagation(dc_da: np.ndarray, z: np.ndarray, w: np.ndarray, output_prev: np.ndarray) -> tuple:
+
+    da_dz = np.where(z > 0, 1, 0) # Relu derivative
+    delta = da_dz * dc_da
+    dc_dw = np.outer(delta, output_prev)
+
+    trans_w = w.transpose()
+    dc_da = [] # a(L-1)
+    for row in trans_w:
+        dc_da.append(np.dot(row, delta)) # a[k][L-1] 
+
+    new_dc_da = np.array(dc_da)
+    return (dc_dw, new_dc_da, delta)
+
     
 
 
 if __name__ == "__main__":
-   ### TESTING THE COST FUNCTION
-   softmax_backpropogation()
+    
 
 
 
