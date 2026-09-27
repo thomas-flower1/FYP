@@ -2,6 +2,11 @@ import numpy as np
 import pytest
 
 
+"""
+TODO: Unit tests - in the other file, docstrings, additional cost and activation functions
+
+"""
+
 class Layer:
     '''
     XXX
@@ -64,38 +69,52 @@ def Softmax(vector: np.ndarray):
     sol = [d[i] / n for i in range(vector.shape[0])]
     return np.round(np.array(sol), 3)
 
-# TODO: the docstring
 def cross_entropy_loss(prediction: np.ndarray, target: np.ndarray) -> int:
     return sum(-(target * np.log(prediction) + (1 - target) * np.log(1 - prediction))) / prediction.shape
    
 
 ### BACKPROPOGATION ###
-def softmax_backpropogation(prediction: np.ndarray, target: np.ndarray, a: np.ndarray) -> np.ndarray:
-    '''Usage: between the outpt layer and the last hidden layer'''
+def softmax_backpropogation(prediction: np.ndarray, target: np.ndarray, output_prev: np.ndarray, w: np.ndarray) -> tuple:
+    """Function that computes the gradients of the output layer, with respect to softmax and cross-entropy loss
 
+    Args:
+        prediction (np.ndarray) : Vector output of the output layer (n, )
+        target (np.ndarray) : one-hot encoded vector (n, )
+        output_prev (np.ndarray) : Vector output of the prev layer that is input to this layer (m,)
+        w (np.ndarray) : Matrix of the weights of the current layer (n,m)
 
-    ### SINCE WE ARE USING THE CROSS ENTROPY LOSS FUNCTION THE DERIVATIVE COLLAPSES NICELY
-    d = np.subtract(prediction, target) ### da_dz * dc_da
-    dc_dw = np.outer(d, a)
+    Returns:
+        dc_dw (np.ndarray) :
+        dc_da (np.ndarray) :
+        delta (np.ndarray) : 
 
-    # ALMOST FORGOT ABOUT THE BIAS - dz / db = 1
+    """
 
-    return (dc_dw, d) # (weight gradients (matrix), bias gradients (vector))
+    delta = (prediction - target) # da / dz * dc / da
+    dc_dw = np.outer(output_prev, delta) # Gradients for W 
+
+    ### DC/DA - TO PASS ONTO THE NEXT LAYER ###
+    ### FIXME : get rid of the loop?
+    trans_w = w.transpose() # each row now corresponds to an output neuron
+    dc_da = [] # a(L-1)
+    for row in trans_w:
+        dc_da.append(np.dot(row, delta)) 
+
+    dc_da = np.array(dc_da)
+    return (dc_dw, dc_da, delta)
+
+  
+
 
 #FIXME
-def relu_backpropogation(z: np.ndarray, a: np.ndarray, prev: np.ndarray):
-    '''Two cases, either this is the layer next to the '''
-
-    da_dz = np.where(z > 0, 1, 0) # shape (1,), derivative of ReLu
+def relu_backpropogation(dc_da: np.ndarray, z: np.ndarray, w: np.ndarray, output_prev: np.ndarray) -> tuple:
     pass
+    
 
 
 if __name__ == "__main__":
    ### TESTING THE COST FUNCTION
-   prediction = np.array([0.33, 0.23])
-   target = np.array([0, 1])
-
-   print(cross_entropy_loss(prediction, target))
+   softmax_backpropogation()
 
 
 
