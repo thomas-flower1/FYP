@@ -98,7 +98,7 @@ def read(filename: str, target: np.ndarray) -> list:
     sol = []
     with open(filename, "r") as rf:
         for line in rf:
-            arr = np.ndarray([int(x) / 255 for x in line.rstrip().split(",")])
+            arr = np.array([int(x) / 255 for x in line.rstrip().split(",")])
             data = Data(arr, target)
             sol.append(data)
 
@@ -136,7 +136,7 @@ def user_defined_image() -> Data:
     raise FileNotFoundError("The specified file doens't contain the word dog or cat in the filepath")
 
 ## TODO
-def comp_pixel_perc():
+def comp_pixel_percentage():
     lengths = []
     for i in range(4001, 4500, 1):
         sample = f"data_set/cats_set/cat.{i}.jpg"
@@ -160,6 +160,8 @@ if __name__ == "__main__":
        sys.exit("No CSV file specified, goodbye")
 
    process(sys.argv[1])
+
+   
   
  
 
