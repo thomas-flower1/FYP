@@ -17,8 +17,7 @@ import os
 WIDTH = 256
 HEIGHT = 256
 
-START_INDEX = 0
-END_INDEX = 5050 # The extra 50 is for testing at the end
+SIZE = 5050 # The extra 50 is for testing at the end
 
 class Data:
     '''Data class that holds an image's grayscale vector and the corresponding one hot encoded vector
@@ -63,26 +62,27 @@ def process(filename: str) -> None:
 
     wd = os.getcwd()
     with open(filename, "w") as wf:
-        count = 0
-        while count < END_INDEX + 1:
-            fn = f"{wd}/dataset/{type}/{count}.jpg"
-            try:
-                img = Image.open(fn).convert("L")
-            except FileNotFoundError:
-                continue
-            finally:
-                resize = img.resize((WIDTH, HEIGHT)) 
-                data = list(resize.getdata()) # Returns a 1D list with all the grayscale values of a single image
-                if len(data) != WIDTH * HEIGHT:
-                    raise Exception("READ ERROR")
+        for i in range(SIZE):
+            fn = f"{wd}/dataset/{type}/{i}.jpg"
+            img = Image.open(fn).convert("L")
+            resize = img.resize((WIDTH, HEIGHT)) 
+            data = list(resize.getdata()) # Returns a 1D list with all the grayscale values of a single image
+            
+            if len(data) != WIDTH * HEIGHT:
+                raise Exception("READ ERROR")
 
-                wf.write(','.join(str(num) for num in data))
+            wf.write(','.join(str(num) for num in data))
 
-                # Don't print a newline on the last line
-                if count != END_INDEX:
-                    wf.write("\n")
+            if i != SIZE - 1:
+                wf.write("\n")
 
-                count += 1
+        
+
+
+        
+        
+
+
 
 
 def process_single(filepath, target) -> Data:
