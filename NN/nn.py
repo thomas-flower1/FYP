@@ -23,7 +23,7 @@ class Layer:
     """
 
     def __init__(self, input_vector: np.ndarray, current_layer_size: int):
-        self._input_vector: np.ndarray = self.input_vector
+        self._input_vector: np.ndarray = input_vector
         self._weights: np.ndarray = np.random.randn(current_layer_size, input_vector.size) * np.sqrt(2 / input_vector.size)  # He initialization
         self._bias: np.ndarray = np.random.uniform(-1, 1, (current_layer_size,))
 
