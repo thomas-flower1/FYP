@@ -1,5 +1,13 @@
 import numpy as np
 from nn import *
+import pytest
+
+'''
+TODO: All the unit tests for the NN
+
+
+
+'''
 
 
 def test_input_vector():
