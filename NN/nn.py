@@ -2,6 +2,7 @@ import time
 from random import shuffle
 
 import numpy as np
+import os
 
 from img import HEIGHT, WIDTH, read
 
@@ -162,7 +163,7 @@ if __name__ == "__main__":
     output_layer = Layer(np.random.rand(256), 2)
 
     start = time.time()
-    epoch = 10
+    epoch = 5
     for _ in range(epoch):
         for index, data in enumerate(test_arr):
             s = time.time()
@@ -204,10 +205,18 @@ if __name__ == "__main__":
 
     print(f"Time to to train the network {end - start}")
 
-    # # Save the weights and the bias - need to test this
-    # hidden_layer.save()
-    # hidden_layer2.save()
-    # output_layer.save()
+    # Save the weights and the bias - need to test this
+    hidden_layer.save("layer1_weights", "layer1_bias")
+    hidden_layer2.save("layer2_weights", "layer2_bias")
+    output_layer.save("output_weights", "output_bias")
+
+    dir = "/home/thomas/UCC/FYP/NN/"
+
+    # Loading the weights and bias
+    hidden_layer.load(f"{dir}/layer1_weights.npy", f"{dir}/layer1_bias.npy")
+    hidden_layer2.load(f"{dir}/layer2_weights.npy", f"{dir}/layer2_bias.npy")
+    output_layer.load(f"{dir}/output_weights.npy", f"{dir}/output_bias.npy")
+
 
     ### TESTING AGAINST THE UNSEEN DATA
     correct = 0
