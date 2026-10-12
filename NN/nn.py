@@ -107,7 +107,6 @@ def softmax_backpropagation(prediction: np.ndarray, target: np.ndarray, output_p
     return (dc_dw, dc_da, delta)
 
 
-# TODO: DOCSTRING
 def relu_backpropagation(dc_da: np.ndarray, z: np.ndarray, w: np.ndarray, output_prev: np.ndarray) -> tuple:
     """Function that computes the gradients with respect to the layer in-front of it
 
@@ -162,53 +161,53 @@ if __name__ == "__main__":
     hidden_layer2 = Layer(np.random.rand(512), 256)
     output_layer = Layer(np.random.rand(256), 2)
 
-    start = time.time()
-    epoch = 5
-    for _ in range(epoch):
-        for index, data in enumerate(test_arr):
-            s = time.time()
-            target: np.ndarray = data.get_target()
-            input: np.ndarray = data.get_data()
+    # start = time.time()
+    # epoch = 5
+    # for _ in range(epoch):
+    #     for index, data in enumerate(test_arr):
+    #         s = time.time()
+    #         target: np.ndarray = data.get_target()
+    #         input: np.ndarray = data.get_data()
 
-            hidden_layer.set_input_vector(input)
-            z1 = hidden_layer.forward()
-            a1 = ReLu(z1)
+    #         hidden_layer.set_input_vector(input)
+    #         z1 = hidden_layer.forward()
+    #         a1 = ReLu(z1)
 
-            hidden_layer2.set_input_vector(a1)
-            z2 = hidden_layer2.forward()
-            a2 = ReLu(z2)
+    #         hidden_layer2.set_input_vector(a1)
+    #         z2 = hidden_layer2.forward()
+    #         a2 = ReLu(z2)
 
-            output_layer.set_input_vector(a2)
-            z3 = output_layer.forward()
-            prediction = Softmax(z3)
+    #         output_layer.set_input_vector(a2)
+    #         z3 = output_layer.forward()
+    #         prediction = Softmax(z3)
 
-            loss = cross_entropy_loss(prediction, target)
-            print(f"The loss is: {loss}")
+    #         loss = cross_entropy_loss(prediction, target)
+    #         print(f"The loss is: {loss}")
 
-            ## Backprop
-            dc_dw1, dc_da1, b1 = softmax_backpropagation(prediction, target, a2, output_layer._weights)  # OUTPUT LAYER
-            dc_dw2, dc_da2, b2 = relu_backpropagation(dc_da1, z2, hidden_layer2._weights, a1)  ## HIDDEN LAYER 2
-            dc_dw3, dc_da3, b3 = relu_backpropagation(dc_da2, z1, hidden_layer._weights, input)  ## HIDDEN LAYER 1
+    #         ## Backprop
+    #         dc_dw1, dc_da1, b1 = softmax_backpropagation(prediction, target, a2, output_layer._weights)  # OUTPUT LAYER
+    #         dc_dw2, dc_da2, b2 = relu_backpropagation(dc_da1, z2, hidden_layer2._weights, a1)  ## HIDDEN LAYER 2
+    #         dc_dw3, dc_da3, b3 = relu_backpropagation(dc_da2, z1, hidden_layer._weights, input)  ## HIDDEN LAYER 1
 
-            # Updated the gradients
-            output_layer.update_bias(b1)
-            output_layer.update_weights(dc_dw1)
-            hidden_layer2.update_bias(b2)
-            hidden_layer2.update_weights(dc_dw2)
-            hidden_layer.update_bias(b3)
-            hidden_layer.update_weights(dc_dw3)
-            e = time.time()
-            print(f"Current round {index}")
-            print(f"TIme elapsed for this example is: {e - s}")
+    #         # Updated the gradients
+    #         output_layer.update_bias(b1)
+    #         output_layer.update_weights(dc_dw1)
+    #         hidden_layer2.update_bias(b2)
+    #         hidden_layer2.update_weights(dc_dw2)
+    #         hidden_layer.update_bias(b3)
+    #         hidden_layer.update_weights(dc_dw3)
+    #         e = time.time()
+    #         print(f"Current round {index}")
+    #         print(f"TIme elapsed for this example is: {e - s}")
 
-    end = time.time()
+    # end = time.time()
 
-    print(f"Time to to train the network {end - start}")
+    # print(f"Time to to train the network {end - start}")
 
-    # Save the weights and the bias - need to test this
-    hidden_layer.save("layer1_weights", "layer1_bias")
-    hidden_layer2.save("layer2_weights", "layer2_bias")
-    output_layer.save("output_weights", "output_bias")
+    # # Save the weights and the bias - need to test this
+    # hidden_layer.save("layer1_weights", "layer1_bias")
+    # hidden_layer2.save("layer2_weights", "layer2_bias")
+    # output_layer.save("output_weights", "output_bias")
 
     dir = "/home/thomas/UCC/FYP/NN/"
 
@@ -218,25 +217,35 @@ if __name__ == "__main__":
     output_layer.load(f"{dir}/output_weights.npy", f"{dir}/output_bias.npy")
 
 
+ 
     ### TESTING AGAINST THE UNSEEN DATA
-    correct = 0
-    for data in validate_arr:
-        target: np.ndarray = data.get_target()
-        input: np.ndarray = data.get_data()
+    validate_arr = arr[:1000]
+    rounds = 10
+    correct = []
+    for _ in range(rounds):
+        current_correct = 0
+        for data in validate_arr:
+            target: np.ndarray = data.get_target()
+            input: np.ndarray = data.get_data()
 
-        hidden_layer.set_input_vector(input)
-        z1 = hidden_layer.forward()
-        a1 = ReLu(z1)
+            hidden_layer.set_input_vector(input)
+            z1 = hidden_layer.forward()
+            a1 = ReLu(z1)
 
-        hidden_layer2.set_input_vector(a1)
-        z2 = hidden_layer2.forward()
-        a2 = ReLu(z2)
+            hidden_layer2.set_input_vector(a1)  
+            z2 = hidden_layer2.forward()
+            a2 = ReLu(z2)
 
-        output_layer.set_input_vector(a2)
-        z3 = output_layer.forward()
-        prediction = Softmax(z3)
+            output_layer.set_input_vector(a2)
+            z3 = output_layer.forward()
+            prediction = Softmax(z3)
 
-        if check(prediction, target):
-            correct += 1
+            if check(prediction, target):
+                current_correct += 1
+        correct.append(current_correct)
+        shuffle(arr)
+        validate_arr = arr[:1000]
 
-    print(f"The accuracy of the network is: {correct}%")
+    sol = np.sum(np.array(correct)) / rounds
+    print(f"Correct:{correct}")
+    print(f"The accuracy of the network is: {(sol / 1000 * 100):.2f}%")
