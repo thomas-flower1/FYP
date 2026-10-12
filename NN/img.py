@@ -70,19 +70,19 @@ def process(filename: str, dir: str) -> None:
                 wf.write("\n")
 
 
-def process_single(filepath, target) -> Data:
+def process_single(filepath) -> np.ndarray:
     """Helper functions for \"user_defined_image\""""
 
     img = Image.open(filepath).convert("L")
     resize = img.resize((WIDTH, HEIGHT))
-    data = list(
+    data = np.array(
         resize.getdata()
     )  # Returns a 1D list with all the grayscale values of a single image
 
     if len(data) != WIDTH * HEIGHT:
         raise Exception("READ ERROR")
 
-    return Data(data, target)
+    return data
 
 
 def read(filename: str, target: np.ndarray) -> list:
@@ -107,58 +107,8 @@ def read(filename: str, target: np.ndarray) -> list:
     return sol
 
 
-def user_defined_image() -> Data:
-    """Getting user specified image and returning an array to pass into the nn
-    Assumption: Cat is hot encoded to [1,0] and dog is [0,1]
-    *Usage: To be called in the NN program*
-
-    Args:
-        n/a
-
-    Returns:
-        np.ndarray: Grayscale vector of the image, shape is (n,)
-
-    Raises:
-        System Exit: Too many command line arguments
-
-    """
-    cat_hot_encoded = [1, 0]
-    dog_hot_encoded = [0, 1]
-
-    # Checking command line arguments
-    if len(sys.argv) != 2:
-        raise SystemExit("Too many / little  command line arguments")
-
-    filepath = sys.argv[1].lower()  # should be the complete pathname
-    print(filepath)
-    if re.search(r"cat", filepath):
-        return process_single(filepath, cat_hot_encoded)
-    elif re.search(r"dog", filepath):
-        return process_single(filepath, dog_hot_encoded)
-
-    raise FileNotFoundError(
-        "The specified file doens't contain the word dog or cat in the filepath"
-    )
-
-
-## TODO
-def comp_pixel_percentage():
-    lengths = []
-    for i in range(4001, 4500, 1):
-        sample = f"data_set/cats_set/cat.{i}.jpg"
-        img = Image.open(sample).convert("L")
-        lengths.append(len(img.getdata()))
-
-    avg = round(sum(lengths) / len(lengths))
-    print(f"The average number of pixels is: {avg}")
-    print(f"We are resizing to {WIDTH} X {HEIGHT} which is {WIDTH * HEIGHT} pixels")
-    print(
-        f"This is {round(WIDTH * HEIGHT / avg * 100)}% of the pixels of the original image"
-    )
-
 
 ### TODO: TESTS ###
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
