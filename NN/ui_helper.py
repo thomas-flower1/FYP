@@ -4,8 +4,6 @@ from img import WIDTH, HEIGHT, process_single
 import streamlit as st
 
 
-
-
 @st.cache_data
 def load_nn(dir) -> tuple:
 

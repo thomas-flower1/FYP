@@ -1,12 +1,13 @@
 import streamlit as st
 from nn import Layer, ReLu, Softmax, softmax_backpropagation, relu_backpropagation
-from img import read, WIDTH, HEIGHT
+from img import read, WIDTH, HEIGHT, Data
 import numpy as np
 from img import process_single
 import os
 import random
-
 from ui_helper import load_nn, forward
+import re
+from random import shuffle
 
 st.title("Neural Network with NumPy")
 st.markdown("*A visual representation of custom **neural network***")
@@ -24,6 +25,9 @@ if "pathname" not in st.session_state:
 if "upload_hash" not in st.session_state:
     st.session_state.upload_hash = random.getrandbits(128)
 
+if "nn_dict" not in st.session_state:
+    st.session_state.nn_dict = {}
+
 
 # LOADING THE NN
 cwd = "/home/thomas/UCC/FYP/NN/" 
@@ -38,25 +42,15 @@ h1, h2, o = load_nn(cwd)
 container = tab1.container(border=True)
 container.write("This UI allows the creation of customer neural networks. Users can specify what to train, how many hidden layers and even specify what the activation functions are. Under the hood we have Numpy and modular Python code to train and test the network. Try it for yourself below!")
 
-#TODO: Append the code each time we add more
-tab1.markdown("*A look into the code*")
-code = """
-target: np.ndarray = data.get_target()
-input: np.ndarray = data.get_data()
 
-"""
-
-
-tab1.code(code, language="python")
 
 
 ### CREATING THE NN
 MAX = 256
 
 tab1.subheader("Create")
-tab1.number_input("", value=None, placeholder="Input Layer Size", key=10000, max_value=MAX)
 
-
+data_pathname = tab1.text_input("",  value="Absolute pathname of csv...", label_visibility="collapsed")
 
 activation_functions = ("ReLu", "Softmax")
 col1, col2 = tab1.columns([1, 1]) 
@@ -66,14 +60,84 @@ col1, col2 = tab1.columns([1, 1])
 
 
 
-if tab1.button("Add Layer"):
-    st.session_state.counter += 1
-
-
 
 for i in range(st.session_state.counter):
-    col1.number_input("", value=None, placeholder="Hidden Layer Size", key=i)
-    col2.selectbox("", activation_functions, key=i/2)
+    value = col1.number_input("", value=None, placeholder="Hidden Layer Size", key=i)
+    activation = col2.selectbox("", activation_functions, key=i/2)
+    st.session_state.nn_dict[st.session_state.counter] = (value, activation)
+
+
+with tab1.container(horizontal=True):
+    add_layer = st.button("Add Layer")
+    train = st.button("Train", type="primary")
+
+
+if add_layer:
+    st.session_state.counter += 1
+    st.rerun()
+
+   
+tab1.write(st.session_state.nn_dict.keys())
+tab1.write(st.session_state.nn_dict.values())
+
+
+if train:
+    if not data_pathname:
+        tab1.error("Invalid CSV")
+
+@st.cache_data
+def train(nn_dict: dict, pathnames: list) -> None:
+
+    # 1. DATA PREP
+    loaded_data = []
+    for index,  path in enumerate(pathnames):
+        zeros = [0] * len(pathnames)
+        zeros[index] = 1
+        data = read(path, np.array(zeros))
+        loaded_data.append(data)
+
+    # flatten the data
+    inputs: list = [data for row in loaded_data for data in row]
+    shuffle(inputs)
+
+
+    # 2. NN CREATION
+    layers = []
+    prev_layer_size = len(inputs[0].get_data())
+    for _, value in nn_dict.items():
+        size, activation = value
+        layer = Layer(prev_layer_size, size) # TODO initialize a random numpy array for each of the layers
+        prev_layer_size = size
+
+        layers.append((layer, activation))
+
+    
+    rev_layers = list(reversed(layers))
+
+    # 3. FORWARDING
+    for data in inputs:
+        input_vector = data.get_data()
+        target = data.get_target()
+
+
+        
+        for index, value in enumerate(layers):
+            layer, activation = value
+            layer.set_input_vector(input_vector)
+            z = layer.forward()
+
+            match activation:
+                case "ReLu":
+                    input_vector = ReLu(z)
+                case "Softmax":
+                    input_vector = Softmax(z)
+
+        
+        # 4. BACKPROP TODO
+
+
+    # 5. SAVING
+        
 
 
 
