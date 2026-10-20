@@ -28,17 +28,18 @@ if "upload_hash" not in st.session_state:
 if "nn_dict" not in st.session_state:
     st.session_state.nn_dict = {}
 
+if "csv_pathnames" not in st.session_state:
+    st.session_state.csv_pathnames = {} # Key: Absolute Path, Value: Target
+
+if "csv_count" not in st.session_state:
+    st.session_state.csv_count = 1
 
 # LOADING THE NN
 cwd = "/home/thomas/UCC/FYP/NN/" 
 h1, h2, o = load_nn(cwd)
 
 
-
-
-
-
-
+tab1.markdown("#### Create")
 container = tab1.container(border=True)
 container.write("This UI allows the creation of customer neural networks. Users can specify what to train, how many hidden layers and even specify what the activation functions are. Under the hood we have Numpy and modular Python code to train and test the network. Try it for yourself below!")
 
@@ -46,21 +47,61 @@ container.write("This UI allows the creation of customer neural networks. Users 
 
 
 ### CREATING THE NN
-MAX = 256
 
-tab1.subheader("Create")
+tab1.markdown("#### Add CSV Image Data")
+csv_container = tab1.container(border=True)
+csv_container.write("In this section you can upload you greyscale image data for a specific class. Match each label with the data then press submit!")
 
-data_pathname = tab1.text_input("",  value="Absolute pathname of csv...", label_visibility="collapsed")
+# data uploading
+left, middle, right = tab1.columns([1, 1, 1])
+csv_data = [] # (UploadedFile, Target)
+for i in range(st.session_state.csv_count):
+    if i % 3 == 1: position = middle
+    elif i % 3 == 2: position = right
+    else: position = left
+
+    image_data = position.file_uploader("", accept_multiple_files=False, type="csv", label_visibility="collapsed", key=f"image_data{i}")
+    target = position.text_input("Enter a label for this training data: ", key=f"targe{i}")
+    csv_data.append((image_data, target))
+
+
+with tab1.container(horizontal=True):
+   add_csv_button = st.button("Add new CSV Data")
+   submit_csv = st.button("Submit CSV Data", type="primary") # TODO: no validation that each csv has a target
+
+if add_csv_button:
+    st.session_state.csv_count += 1
+    st.rerun()
+
+
+# saving the files locally and keeping track of the pathnames and targets
+if csv_data and submit_csv:
+    # TODO CLEAR THE EXISTING PATHNAMES FROM SESSION AND LOCALLY
+    for csv in csv_data:
+        uploaded, target = csv
+        absolute_path = os.path.join(cwd, uploaded.name)
+        st.session_state.csv_pathnames[absolute_path] = target
+        with open(absolute_path, "wb") as f:
+            f.write(uploaded.getbuffer())
+  
+
+
+
+
+
 
 activation_functions = ("ReLu", "Softmax")
+
+
+
+
+
+
+
+tab1.markdown("#### Add Network Layers")
+with tab1.container(border=True):
+    st.write("Add layers to the network and configure the activation functions")
 col1, col2 = tab1.columns([1, 1]) 
-
-
-
-
-
-
-
 for i in range(st.session_state.counter):
     value = col1.number_input("", value=None, placeholder="Hidden Layer Size", key=i)
     activation = col2.selectbox("", activation_functions, key=i/2)
@@ -81,10 +122,8 @@ tab1.write(st.session_state.nn_dict.keys())
 tab1.write(st.session_state.nn_dict.values())
 
 
-if train:
-    if not data_pathname:
-        tab1.error("Invalid CSV")
 
+# TODO move this to the helper functions
 @st.cache_data
 def train(nn_dict: dict, pathnames: list) -> None:
 

@@ -109,7 +109,7 @@ def read(filename: str, target: np.ndarray) -> list:
 
 
 ### TODO: TESTS ###
-
+#  python3 img.py "cats.csv" "/home/thomas/UCC/FYP/NN/archive/cat"
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         sys.exit("No CSV file specified, goodbye")
