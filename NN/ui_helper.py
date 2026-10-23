@@ -4,8 +4,6 @@ from img import WIDTH, HEIGHT, process_single
 import streamlit as st
 
 
-
-
 @st.cache_data
 def load_nn(dir) -> tuple:
 
@@ -39,3 +37,15 @@ def forward(path, h1, h2, o) -> np.ndarray:
     prediction = Softmax(z3)
 
     return prediction
+
+# Make sure that the entries are not null upon submission
+def validate_csv_data(csv_data: list, tab) -> bool:
+    error = False
+    for csv, target in csv_data:
+        if not csv:
+            tab.error("Each entry must contain csv data")
+            error = True
+        if not target:
+            tab.error("Each csv entry must have a corresponding target")
+            error = True
+    return not error

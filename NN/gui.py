@@ -1,12 +1,13 @@
 import streamlit as st
 from nn import Layer, ReLu, Softmax, softmax_backpropagation, relu_backpropagation
-from img import read, WIDTH, HEIGHT
+from img import read, WIDTH, HEIGHT, Data
 import numpy as np
 from img import process_single
 import os
 import random
-
-from ui_helper import load_nn, forward
+from ui_helper import load_nn, forward, validate_csv_data
+import re
+from random import shuffle
 
 st.title("Neural Network with NumPy")
 st.markdown("*A visual representation of custom **neural network***")
@@ -22,59 +23,192 @@ if "pathname" not in st.session_state:
     st.session_state.pathname = ""
 
 if "upload_hash" not in st.session_state:
-    st.session_state.upload_hash = random.getrandbits(128)
+    st.session_state.upload_hash = random.getrandbits(128) # TODO REMOVE THIS AND DO THE ALTERNATIVE
 
+if "nn_dict" not in st.session_state:
+    st.session_state.nn_dict = {} # key: layer_index, value: (size, activation)
+
+if "csv_pathnames" not in st.session_state:
+    st.session_state.csv_pathnames = {} # Key: Absolute Path, Value: Target
+
+if "csv_count" not in st.session_state:
+    st.session_state.csv_count = 1
 
 # LOADING THE NN
 cwd = "/home/thomas/UCC/FYP/NN/" 
 h1, h2, o = load_nn(cwd)
 
 
-
-
-
-
-
+tab1.markdown("#### Create")
 container = tab1.container(border=True)
 container.write("This UI allows the creation of customer neural networks. Users can specify what to train, how many hidden layers and even specify what the activation functions are. Under the hood we have Numpy and modular Python code to train and test the network. Try it for yourself below!")
 
-#TODO: Append the code each time we add more
-tab1.markdown("*A look into the code*")
-code = """
-target: np.ndarray = data.get_target()
-input: np.ndarray = data.get_data()
 
-"""
-
-
-tab1.code(code, language="python")
 
 
 ### CREATING THE NN
-MAX = 256
 
-tab1.subheader("Create")
-tab1.number_input("", value=None, placeholder="Input Layer Size", key=10000, max_value=MAX)
+tab1.markdown("#### Add CSV Image Data")
+csv_container = tab1.container(border=True)
+csv_container.write("In this section you can upload you greyscale image data for a specific class. Match each label with the data then press submit!")
+
+# data uploading
+left, middle, right = tab1.columns([1, 1, 1])
+csv_data = [] # (UploadedFile, Target)
+for i in range(st.session_state.csv_count):
+    if i % 3 == 1: position = middle
+    elif i % 3 == 2: position = right
+    else: position = left
+
+    image_data = position.file_uploader("", accept_multiple_files=False, type="csv", label_visibility="collapsed", key=f"image_data{i}")
+    target = position.text_input("", placeholder="Enter label", key=f"targe{i}", label_visibility="collapsed")
+    csv_data.append((image_data, target))
+
+# Add data buttons
+with tab1.container(horizontal=True):
+   add_csv_button = st.button("Add new CSV Data")
+
+if add_csv_button:
+    st.session_state.csv_count += 1
+    st.rerun()
+
+
+  
 
 
 
 activation_functions = ("ReLu", "Softmax")
+tab1.markdown("#### Add Network Layers")
+
+with tab1.container(border=True):
+    st.write("Add layers to the network and configure the activation functions")
+
+# UI for assigning the layer size and the activation function per layer
 col1, col2 = tab1.columns([1, 1]) 
-
-
-
-
-
-
-if tab1.button("Add Layer"):
-    st.session_state.counter += 1
-
-
-
 for i in range(st.session_state.counter):
-    col1.number_input("", value=None, placeholder="Hidden Layer Size", key=i)
-    col2.selectbox("", activation_functions, key=i/2)
+    value = col1.number_input("", value=0, min_value=0, max_value=255, placeholder="Hidden Layer Size", key=i)
+    activation = col2.selectbox("", activation_functions, key=i/2)
+    st.session_state.nn_dict[st.session_state.counter] = (value, activation)
 
+
+with tab1.container(horizontal=True):
+    add_layer = st.button("Add Layer")
+    train_button = st.button("Train", type="primary")
+
+
+if add_layer:
+    st.session_state.counter += 1
+    st.rerun()
+
+
+
+# TODO move this to the helper functions
+@st.cache_data
+def train(nn_dict: dict, pathnames: dict, number_of_epochs=10) -> None:
+
+    # What is abstraction lmaoooooo
+
+    # 1. DATA PREP
+    loaded_data = []
+    targets = {} # key: [0, 0,1], value: "Cat"
+    index = 0
+    for path, target in pathnames.items():
+
+        # one hot encoded
+        zeros = [0] * len(pathnames)
+        zeros[index] = 1
+
+        # reading a full csv file
+        loaded_data = read(path, np.array(zeros)) + loaded_data
+
+        # keeping track of the one hot encoded and the string value
+        targets[target] = zeros
+        index += 1
+
+
+    shuffle(loaded_data)
+
+
+    # 2. NN CREATION
+    layers = []
+    prev_layer_size = len(loaded_data[0].get_data())
+    for _, value in nn_dict.items():
+        size, activation = value
+        layer = Layer(np.random.rand(int(prev_layer_size)), size) # TODO initialize a random numpy array for each of the layers
+        prev_layer_size = size
+        layers.append((layer, activation))
+
+    
+    rev_layers = list(reversed(layers))
+
+    st.write(layers)
+    st.write(loaded_data)
+
+    # 3. FORWARDING
+    for _ in range(number_of_epochs):
+        for data in loaded_data:
+
+            # getting a single training example
+            input_vector = data.get_data() # Note: At the end of the iterations this becomes the output of the network
+            target = data.get_target()
+            
+            for value in layers:
+                layer, activation = value
+                layer.set_input_vector(input_vector)
+                current_z = layer.forward()
+
+                # Add additional activation functions here later
+                match activation:
+                    case "ReLu":
+                        current_a = ReLu(current_z)
+                    case "Softmax":
+                        current_a = Softmax(current_z)
+
+            
+
+                input_vector = current_a
+
+            # 4. BACKPROP TODO
+            prediction = input_vector
+            dc_da = None
+
+            dc_dw = [] # All weight gradients to update
+            b = [] # All bias gradients to update
+
+            for  value in rev_layers:
+                layer, activation = value
+
+                match activation:
+                    case "Softmax":
+                        current_dc_dw, dc_da, current_b = softmax_backpropagation(prediction, target, layer.get_input_vector(), layer.get_weights())
+                        dc_dw.append(current_dc_dw)
+                        b.append(current_b)
+                    case "ReLu":
+                        current_dc_dw, dc_da, current_b = relu_backpropagation(dc_da, layer.get_output() ,layer.get_weights(), layer.get_input_vector()) 
+                        dc_dw.append(current_dc_dw)
+                        b.append(current_b)
+
+            # 5.  Update the gradients
+
+
+
+### Pressing the train button will:
+# 1. Validate csv data and save it locally
+# 2. Call train function
+
+if csv_data and train_button and validate_csv_data(csv_data, tab1):
+    # TODO CLEAR THE EXISTING PATHNAMES FROM SESSION AND LOCALLY
+    for csv in csv_data:
+        uploaded, target = csv
+        absolute_path = os.path.join(cwd, uploaded.name)
+        st.session_state.csv_pathnames[absolute_path] = target
+
+        # saving the files locally
+        with open(absolute_path, "wb") as f:
+            f.write(uploaded.getbuffer())
+
+
+    train(st.session_state.nn_dict, st.session_state.csv_pathnames)
 
 
 
