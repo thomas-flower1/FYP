@@ -27,6 +27,7 @@ class Layer:
         self._input_vector: np.ndarray = input_vector
         self._weights: np.ndarray = np.random.randn(current_layer_size, input_vector.size) * np.sqrt(2 / input_vector.size)  # He initialization
         self._bias: np.ndarray = np.random.uniform(-1, 1, (current_layer_size,))
+        self._output = None
 
     def set_input_vector(self, input_vector: np.ndarray) -> None:
         self._input_vector = input_vector
@@ -34,9 +35,16 @@ class Layer:
     def get_input_vector(self) -> np.ndarray:
         return self._input_vector
 
+    def get_weights(self) -> np.ndarray:
+        return self._weights
+
+    def get_output(self) -> np.ndarray:
+        return self._output
+
     def forward(self) -> np.ndarray:
         dp = np.dot(self._weights, self._input_vector)
-        return np.add(dp, self._bias)
+        self._output = np.add(dp, self._bias)
+        return self._output
 
     def update_weights(self, gradients: np.ndarray, learning_rate: float = 0.01) -> None:
         self._weights -= gradients * learning_rate
@@ -111,8 +119,8 @@ def relu_backpropagation(dc_da: np.ndarray, z: np.ndarray, w: np.ndarray, output
     """Function that computes the gradients with respect to the layer in-front of it
 
     Args:
-        prediction (np.ndarray) : Vector output of the output layer
-        target (np.ndarray) : one-hot encoded vector
+        dc_da: (np.ndarray) : Derivative from the previous layer
+        z (np.ndarray) : Output of the current layer before the activation function
         output_prev (np.ndarray) : Vector output of the prev layer that is input to this layer
         w (np.ndarray) : Matrix of the weights of the current layer
 
