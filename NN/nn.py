@@ -151,8 +151,8 @@ def check(prediction: np.ndarray, hot: np.ndarray) -> bool:
 
 if __name__ == "__main__":
     LEARNING_RATE = 0.01
-    dogs: list = read("dog.csv", np.array([1, 0]))  # A list of Data Objects
-    cats: list = read("cat.csv", np.array([0, 1]))
+    dogs: list = read("CSV/dogs.csv", np.array([1, 0]))  # A list of Data Objects
+    cats: list = read("CSV/cats.csv", np.array([0, 1]))
 
     cats = cats[:5050]
     dogs = dogs[:5050]
@@ -165,9 +165,9 @@ if __name__ == "__main__":
     test_arr: list = arr[: SIZE - 100]
     validate_arr = arr[SIZE - 100 :]  # Unseen dataset
 
-    hidden_layer = Layer(np.random.rand(WIDTH * HEIGHT), 512)
-    hidden_layer2 = Layer(np.random.rand(512), 256)
-    output_layer = Layer(np.random.rand(256), 2)
+    # hidden_layer = Layer(np.random.rand(WIDTH * HEIGHT), 512)
+    # hidden_layer2 = Layer(np.random.rand(512), 256)
+    # output_layer = Layer(np.random.rand(256), 2)
 
     # start = time.time()
     # epoch = 5
@@ -219,11 +219,15 @@ if __name__ == "__main__":
 
     dir = "/home/thomas/UCC/FYP/NN/"
 
-    # Loading the weights and bias
-    hidden_layer.load(f"{dir}/layer1_weights.npy", f"{dir}/layer1_bias.npy")
-    hidden_layer2.load(f"{dir}/layer2_weights.npy", f"{dir}/layer2_bias.npy")
-    output_layer.load(f"{dir}/output_weights.npy", f"{dir}/output_bias.npy")
+    hidden_layer = Layer(np.random.rand(WIDTH * HEIGHT), 512)
+    hidden_layer2 = Layer(np.random.rand(512), 256)
+    output_layer = Layer(np.random.rand(256), 2)
 
+    # Loading the weights and bias
+    hidden_layer.load(f"{dir}/TEST_RUN/layer0_weights_maybe.npy", f"{dir}/TEST_RUN/layer0_bias_maybe.npy")
+    hidden_layer2.load(f"{dir}/TEST_RUN/layer1_weights_maybe.npy", f"{dir}/TEST_RUN/layer1_bias_maybe.npy")
+    output_layer.load(f"{dir}/TEST_RUN/layer2_weights_maybe.npy", f"{dir}/TEST_RUN/layer2_bias_maybe.npy")
+  
 
  
     ### TESTING AGAINST THE UNSEEN DATA
@@ -255,5 +259,4 @@ if __name__ == "__main__":
         validate_arr = arr[:1000]
 
     sol = np.sum(np.array(correct)) / rounds
-    print(f"Correct:{correct}")
     print(f"The accuracy of the network is: {(sol / 1000 * 100):.2f}%")
