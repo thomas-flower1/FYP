@@ -27,6 +27,7 @@ class Layer:
         self._input_vector: np.ndarray = input_vector
         self._weights: np.ndarray = np.random.randn(current_layer_size, input_vector.size) * np.sqrt(2 / input_vector.size)  # He initialization
         self._bias: np.ndarray = np.random.uniform(-1, 1, (current_layer_size,))
+        self._output = None
 
     def set_input_vector(self, input_vector: np.ndarray) -> None:
         self._input_vector = input_vector
@@ -34,9 +35,16 @@ class Layer:
     def get_input_vector(self) -> np.ndarray:
         return self._input_vector
 
+    def get_weights(self) -> np.ndarray:
+        return self._weights
+
+    def get_output(self) -> np.ndarray:
+        return self._output
+
     def forward(self) -> np.ndarray:
         dp = np.dot(self._weights, self._input_vector)
-        return np.add(dp, self._bias)
+        self._output = np.add(dp, self._bias)
+        return self._output
 
     def update_weights(self, gradients: np.ndarray, learning_rate: float = 0.01) -> None:
         self._weights -= gradients * learning_rate
@@ -111,8 +119,8 @@ def relu_backpropagation(dc_da: np.ndarray, z: np.ndarray, w: np.ndarray, output
     """Function that computes the gradients with respect to the layer in-front of it
 
     Args:
-        prediction (np.ndarray) : Vector output of the output layer
-        target (np.ndarray) : one-hot encoded vector
+        dc_da: (np.ndarray) : Derivative from the previous layer
+        z (np.ndarray) : Output of the current layer before the activation function
         output_prev (np.ndarray) : Vector output of the prev layer that is input to this layer
         w (np.ndarray) : Matrix of the weights of the current layer
 
@@ -143,8 +151,8 @@ def check(prediction: np.ndarray, hot: np.ndarray) -> bool:
 
 if __name__ == "__main__":
     LEARNING_RATE = 0.01
-    dogs: list = read("dog.csv", np.array([1, 0]))  # A list of Data Objects
-    cats: list = read("cat.csv", np.array([0, 1]))
+    dogs: list = read("CSV/dogs.csv", np.array([1, 0]))  # A list of Data Objects
+    cats: list = read("CSV/cats.csv", np.array([0, 1]))
 
     cats = cats[:5050]
     dogs = dogs[:5050]
@@ -157,9 +165,9 @@ if __name__ == "__main__":
     test_arr: list = arr[: SIZE - 100]
     validate_arr = arr[SIZE - 100 :]  # Unseen dataset
 
-    hidden_layer = Layer(np.random.rand(WIDTH * HEIGHT), 512)
-    hidden_layer2 = Layer(np.random.rand(512), 256)
-    output_layer = Layer(np.random.rand(256), 2)
+    # hidden_layer = Layer(np.random.rand(WIDTH * HEIGHT), 512)
+    # hidden_layer2 = Layer(np.random.rand(512), 256)
+    # output_layer = Layer(np.random.rand(256), 2)
 
     # start = time.time()
     # epoch = 5
@@ -211,11 +219,15 @@ if __name__ == "__main__":
 
     dir = "/home/thomas/UCC/FYP/NN/"
 
-    # Loading the weights and bias
-    hidden_layer.load(f"{dir}/layer1_weights.npy", f"{dir}/layer1_bias.npy")
-    hidden_layer2.load(f"{dir}/layer2_weights.npy", f"{dir}/layer2_bias.npy")
-    output_layer.load(f"{dir}/output_weights.npy", f"{dir}/output_bias.npy")
+    hidden_layer = Layer(np.random.rand(WIDTH * HEIGHT), 512)
+    hidden_layer2 = Layer(np.random.rand(512), 256)
+    output_layer = Layer(np.random.rand(256), 2)
 
+    # Loading the weights and bias
+    hidden_layer.load(f"{dir}/TEST_RUN/layer0_weights_maybe.npy", f"{dir}/TEST_RUN/layer0_bias_maybe.npy")
+    hidden_layer2.load(f"{dir}/TEST_RUN/layer1_weights_maybe.npy", f"{dir}/TEST_RUN/layer1_bias_maybe.npy")
+    output_layer.load(f"{dir}/TEST_RUN/layer2_weights_maybe.npy", f"{dir}/TEST_RUN/layer2_bias_maybe.npy")
+  
 
  
     ### TESTING AGAINST THE UNSEEN DATA
@@ -247,5 +259,4 @@ if __name__ == "__main__":
         validate_arr = arr[:1000]
 
     sol = np.sum(np.array(correct)) / rounds
-    print(f"Correct:{correct}")
     print(f"The accuracy of the network is: {(sol / 1000 * 100):.2f}%")

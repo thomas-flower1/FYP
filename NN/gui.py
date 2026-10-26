@@ -1,17 +1,13 @@
-import streamlit as st
-from nn import Layer, ReLu, Softmax, softmax_backpropagation, relu_backpropagation
-from img import read, WIDTH, HEIGHT
-import numpy as np
-from img import process_single
 import os
 import random
 
-from ui_helper import load_nn, forward
+import streamlit as st
+from ui_helper import forward, load_nn, train, validate_csv_data
 
 st.title("Neural Network with NumPy")
 st.markdown("*A visual representation of custom **neural network***")
 
-tab1, tab2, tab3 = st.tabs(["Create" , "Run", "About"])
+tab1, tab2, tab3 = st.tabs(["Create", "Run", "About"])
 
 
 ### INITIALIZE STATE VARIABLES
@@ -22,63 +18,136 @@ if "pathname" not in st.session_state:
     st.session_state.pathname = ""
 
 if "upload_hash" not in st.session_state:
-    st.session_state.upload_hash = random.getrandbits(128)
+    st.session_state.upload_hash = random.getrandbits(128)  # TODO REMOVE THIS AND DO THE ALTERNATIVE
 
+if "nn_dict" not in st.session_state:
+    st.session_state.nn_dict = {}  # key: layer_index, value: (size, activation)
+
+if "csv_pathnames" not in st.session_state:
+    st.session_state.csv_pathnames = {}  # Key: Absolute Path, Value: Target
+
+if "csv_count" not in st.session_state:
+    st.session_state.csv_count = 1
 
 # LOADING THE NN
-cwd = "/home/thomas/UCC/FYP/NN/" 
+cwd = "/home/thomas/UCC/FYP/NN/"
 h1, h2, o = load_nn(cwd)
 
 
+### CREATE
 
-
-
-
-
+tab1.markdown("#### Create")
 container = tab1.container(border=True)
-container.write("This UI allows the creation of customer neural networks. Users can specify what to train, how many hidden layers and even specify what the activation functions are. Under the hood we have Numpy and modular Python code to train and test the network. Try it for yourself below!")
-
-#TODO: Append the code each time we add more
-tab1.markdown("*A look into the code*")
-code = """
-target: np.ndarray = data.get_target()
-input: np.ndarray = data.get_data()
-
-"""
+container.write(
+    "This UI allows the creation of customer neural networks. Users can specify what to train, how many hidden layers and even specify what the activation functions are. Under the hood we have Numpy and modular Python code to train and test the network. Try it for yourself below!"
+)
 
 
-tab1.code(code, language="python")
+tab1.markdown("#### Add CSV Image Data")
+csv_container = tab1.container(border=True)
+csv_container.write("In this section you can upload you greyscale image data for a specific class. Match each label with the data then press submit!")
+
+# data uploading
+left, middle, right = tab1.columns([1, 1, 1])
+csv_data = []  # (UploadedFile, Target)
+
+# Rendering the upload boxes
+for i in range(st.session_state.csv_count):
+    if i % 3 == 1:
+        position = middle
+    elif i % 3 == 2:
+        position = right
+    else:
+        position = left
+
+    image_data = position.file_uploader("", accept_multiple_files=False, type="csv", label_visibility="collapsed", key=f"image_data{i}")
+    target = position.text_input("", placeholder="Enter label", key=f"targe{i}", label_visibility="collapsed")
+    csv_data.append((image_data, target))
 
 
-### CREATING THE NN
-MAX = 256
+# Adding CSV DATA
+add_csv_button = tab1.button("Add new CSV Data")
 
-tab1.subheader("Create")
-tab1.number_input("", value=None, placeholder="Input Layer Size", key=10000, max_value=MAX)
-
-
-
-activation_functions = ("ReLu", "Softmax")
-col1, col2 = tab1.columns([1, 1]) 
+if add_csv_button:
+    st.session_state.csv_count += 1
+    st.rerun()
 
 
+# NN Layers
+activation_functions = ("ReLu", "Softmax")  # Once we have more activation functions this will be expaned
+tab1.markdown("#### Add Network Layers")
 
+with tab1.container(border=True):
+    st.write("Add layers to the network and configure the activation functions")
 
-
-
-if tab1.button("Add Layer"):
-    st.session_state.counter += 1
-
-
-
+# UI for assigning the layer size and the activation function per layer
+col1, col2 = tab1.columns([1, 1])
 for i in range(st.session_state.counter):
-    col1.number_input("", value=None, placeholder="Hidden Layer Size", key=i)
-    col2.selectbox("", activation_functions, key=i/2)
+    value = col1.number_input("", value=0, min_value=0, max_value=512, placeholder="Hidden Layer Size", key=f"Layer_size{i}")
+    activation = col2.selectbox("", activation_functions, key=f"Activation{i}")
+    st.session_state.nn_dict[st.session_state.counter] = (value, activation)
 
 
+add_layer = tab1.button("Add Layer")
 
 
-   
+if add_layer:
+    st.session_state.counter += 1
+    st.rerun()
+
+
+# NN Last Layer
+tab1.markdown("### Configure the last layer")
+with tab1.container(border=True):
+    st.write(
+        "The last layer has been configure for you. It has gathered the number of classes and is now running that through the specified function"
+    )
+
+col1, col2 = tab1.columns([1, 1])
+last_layer_size = col1.number_input("CSV Count", value=st.session_state.csv_count, disabled=True, label_visibility="collapsed")
+last_layer_activation = col2.selectbox("", "Softmax", label_visibility="collapsed")
+
+
+# LEARNING RATE AND EPOCHS
+tab1.markdown("#### Final Adjustments")
+with tab1.container(border=True):
+    st.write("This is the final section with some miscilanoues settings for the Neural Net")
+
+# Getting last layer data
+col1, col2 = tab1.columns([1, 1])
+LEARNING_RATE: int = col1.number_input("Learning rate: ", min_value=0.01, max_value=1.0, value=0.01)
+EPOCH_COUNT: int = col2.number_input("Number of epochs: ", min_value=1, max_value=100, value=1)
+
+
+train_button = tab1.button("Train", type="primary")
+
+### Pressing the train button will:
+# 1. Validate csv data and save it locally
+# 2. Add the last layer data to the nn_dict
+# 3. Call train function
+
+message = tab1.empty()
+
+if train_button and validate_csv_data(csv_data, tab1):
+    # Note: this is added at the end since we want the layer layer vars to be at the end of the dict
+    st.session_state.nn_dict[st.session_state.counter + 1] = (last_layer_size, last_layer_activation)
+
+    # TODO CLEAR THE EXISTING PATHNAMES FROM SESSION AND LOCALLY
+
+    # Creating a dict with key: pathname and value: target for the csv uploads
+    for csv in csv_data:
+        uploaded, target = csv
+        absolute_path = os.path.join(cwd, uploaded.name)
+        st.session_state.csv_pathnames[absolute_path] = target
+
+        # saving the files locally
+        with open(absolute_path, "wb") as f:
+            f.write(uploaded.getbuffer())
+
+    # Calling the train helper function
+    train(st.session_state.nn_dict, st.session_state.csv_pathnames, cwd, message, LEARNING_RATE, EPOCH_COUNT)
+
+
 ### RUN ###
 
 # intro
@@ -93,7 +162,7 @@ The output layer uses Softmax as it's activation function and is composed of two
 to dog.
 
 This model was trained against 5000 dog images and 5000 cat images for 5 epochs. The total time to train was 5 hours and
-the model achieved > 85\% \accuracy on unseen data.
+the model achieved > 85\\% \accuracy on unseen data.
 
 
 
@@ -130,14 +199,14 @@ tab2.code(nn_code)
 
 # File upload and save
 tab2.markdown("#### Upload")
-classification_image = tab2.file_uploader("", accept_multiple_files=False,  label_visibility="collapsed", key=st.session_state.upload_hash)
+classification_image = tab2.file_uploader("", accept_multiple_files=False, label_visibility="collapsed", key=st.session_state.upload_hash)
 
 # Saving the image locally
 if classification_image:
     st.session_state.pathname = os.path.join(cwd, classification_image.name)
     with open(st.session_state.pathname, "wb") as f:
         f.write(classification_image.getbuffer())
-        
+
 results_container = None
 
 # Creating the buttons
@@ -147,7 +216,7 @@ with tab2.container(horizontal=True):
 
 
 # RUN NN
-if run_model_button and st.session_state.pathname: 
+if run_model_button and st.session_state.pathname:
     prediction = forward(st.session_state.pathname, h1, h2, o)
     if prediction[0] >= 0.5:
         message = f"#### The prediction of the model is dog with **{prediction[0] * 100}**% confidence"
@@ -166,8 +235,7 @@ if reset_button and st.session_state.pathname:
 
     st.session_state.pathname = ""
     st.session_state.upload_hash = random.getrandbits(128)
-    st.rerun() # Run the script again
-    
+    st.rerun()  # Run the script again
 
 
 ### ABOUT ###
